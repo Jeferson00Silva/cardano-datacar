@@ -1,6 +1,6 @@
-const CACHE = "cardano-datacar-v1";
-const ASSETS = ["./", "./index.html", "./manifest.webmanifest",
-  "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png"];
+const CACHE = "cardano-datacar-v2";
+const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png"];
+const FONT_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -12,5 +12,11 @@ self.addEventListener("activate", (e) => {
 });
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
-  e.respondWith(caches.match(e.request).then((hit) => hit || fetch(e.request)));
+  e.respondWith(caches.match(e.request).then((hit) => hit || fetch(e.request).then((res) => {
+    if (FONT_HOSTS.includes(new URL(e.request.url).hostname)) {
+      const copy = res.clone();
+      caches.open(CACHE).then((c) => c.put(e.request, copy));
+    }
+    return res;
+  })));
 });
